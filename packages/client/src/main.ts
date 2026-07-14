@@ -12,16 +12,7 @@ const transport = isDemoMode ? new LocalTransport() : new GameSocket(wsUrl);
 const controller = new GameController(transport);
 const scene = new Scene(controller);
 
-function showDemoBanner(): void {
-  const banner = document.createElement("div");
-  banner.id = "demoBanner";
-  banner.textContent =
-    "DEMO BUILD — round outcomes are computed locally in your browser, not by a live server. Not representative of real-money play.";
-  document.body.prepend(banner);
-}
-
 async function boot(): Promise<void> {
-  if (isDemoMode) showDemoBanner();
   const host = document.getElementById("pixiHost");
   if (!host) throw new Error("missing #pixiHost");
   await scene.init(host);

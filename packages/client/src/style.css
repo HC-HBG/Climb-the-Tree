@@ -358,23 +358,6 @@ input:disabled {
 #toast.show {
   display: block;
 }
-#demoBanner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 30;
-  background: #3a2a00;
-  color: #ffd23f;
-  border-bottom: 2px solid var(--gold);
-  font-size: 9px;
-  text-align: center;
-  padding: 8px 12px;
-  line-height: 1.6;
-}
-body:has(#demoBanner) {
-  padding-top: 56px;
-}
 @media (max-width: 820px) {
   #app {
     flex-direction: column;
