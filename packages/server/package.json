@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "main": "./src/index.ts",
+  "exports": {
+    "./roundEngine": "./src/roundEngine.ts",
+    "./wallet": "./src/wallet.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",

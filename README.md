@@ -45,6 +45,28 @@ pnpm run simulate # ad-hoc large (default 10M-round) RTP/instant-fall
                   # 1M-round test (packages/engine)
 ```
 
+## Demo build (no server, GitHub Pages)
+
+`packages/client` normally talks to the live server over WebSocket
+(`GameSocket`, `src/net/wsClient.ts`) — that's the real, server-authoritative
+client. For a zero-backend demo that can be deployed as a static site (e.g.
+GitHub Pages), there's also `LocalTransport`
+(`src/net/localTransport.ts`): it runs the exact same `RoundSession`/`Wallet`
+the server uses, in-process in the browser, behind the same `Transport`
+interface, so `GameController` doesn't know the difference.
+
+```bash
+VITE_DEMO_MODE=true pnpm --filter @climb-the-tree/client run build
+```
+
+This is what `.github/workflows/deploy-demo.yml` builds and publishes to
+GitHub Pages on every push (Settings → Pages → Source must be set to "GitHub
+Actions" once for the first deploy to take effect). The demo build shows a
+persistent banner explaining that outcomes are computed client-side and it
+is **not** representative of real-money play — the FSD's "the crash point
+never leaves the server" guarantee only holds for the real WebSocket client.
+```
+
 `pnpm dev` runs each package's own `dev` script in parallel via pnpm's
 workspace filtering (`pnpm --parallel --filter "./packages/*" run dev`); the
 server uses `tsx watch` and the client uses Vite's dev server, so both

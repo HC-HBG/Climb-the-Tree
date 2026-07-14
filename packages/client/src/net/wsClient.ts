@@ -1,10 +1,8 @@
 import type { ClientToServerMessage, ServerToClientMessage } from "@climb-the-tree/engine";
-
-export type ServerMessageHandler = (msg: ServerToClientMessage) => void;
-export type ConnectionHandler = () => void;
+import type { ConnectionHandler, ServerMessageHandler, Transport } from "./transport.js";
 
 /** Thin typed wrapper around the browser WebSocket for the FSD §2.1 protocol. */
-export class GameSocket {
+export class GameSocket implements Transport {
   private ws: WebSocket | undefined;
   private readonly messageHandlers = new Set<ServerMessageHandler>();
   private readonly openHandlers = new Set<ConnectionHandler>();

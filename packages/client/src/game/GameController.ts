@@ -5,7 +5,7 @@ import {
   type ErrorCode,
   type GameConfig,
 } from "@climb-the-tree/engine";
-import { GameSocket } from "../net/wsClient.js";
+import type { Transport } from "../net/transport.js";
 
 export type ClientState = "BOOT" | "IDLE" | "WAITING" | "CLIMBING" | "CASHED" | "CRASHED" | "RESET";
 
@@ -45,7 +45,7 @@ export interface GameSnapshot {
 export class GameController {
   readonly config: GameConfig = DEFAULT_CONFIG;
 
-  private readonly socket: GameSocket;
+  private readonly socket: Transport;
   private readonly listeners = new Set<() => void>();
 
   private state: ClientState = "BOOT";
@@ -73,8 +73,8 @@ export class GameController {
   private lastMainPressAtMs = 0;
   private resetTimer: ReturnType<typeof setTimeout> | undefined;
 
-  constructor(wsUrl: string) {
-    this.socket = new GameSocket(wsUrl);
+  constructor(transport: Transport) {
+    this.socket = transport;
     this.socket.onMessage((msg) => {
       switch (msg.type) {
         case "round:ready":

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@climb-the-tree/engine": "workspace:*",
+    "@climb-the-tree/server": "workspace:*",
     "pixi.js": "^8.19.0"
   },
   "devDependencies": {
