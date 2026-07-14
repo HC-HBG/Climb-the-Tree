@@ -6,12 +6,32 @@ const WIDTH = 880;
 const HEIGHT = 620;
 const TREE_X = WIDTH * 0.44;
 const TREE_WIDTH = 74;
-const BEAR_Y = HEIGHT * 0.4;
+const BEAR_Y = HEIGHT * 0.4; // fixed screen position for the bear — the world scrolls, not the bear
 const LADDER_X = WIDTH - 64;
-const SCROLL_PX = 1400; // px for the full 1x -> 1000x climb
+const SCROLL_PX = 1400; // px of world scroll for the full 1x -> 1000x climb
 const LOG_MAX = Math.log(1000);
 const LADDER_TICKS = [1, 2, 5, 10, 20, 50, 100, 500, 1000];
 const GROUND_OFFSET = 220; // vertical gap between the bear anchor and the ground at rest
+
+/**
+ * Per-layer parallax scroll factors applied to a single camera value:
+ *   layer.y = layerBaseY + cameraY * scrollFactor
+ * layerBaseY is 0 for every layer here — each layer's shapes are drawn
+ * using their absolute resting-position (cameraY = 0, i.e. 1x) coordinates
+ * directly, so the layer container only ever needs the dynamic term.
+ * Background layers scroll slower (smaller factor) than world-locked ones,
+ * producing standard depth parallax. skyLayer and uiLayer never scroll.
+ */
+const SCROLL_FACTOR = {
+  sky: 0,
+  moon: 0.08,
+  stars: 0.15,
+  farMountains: 0.25,
+  nearMountains: 0.4,
+  pines: 0.55,
+  ground: 1.0,
+  tree: 1.0,
+} as const;
 
 function heightOf(m: number): number {
   return Math.log(Math.max(m, 1)) / LOG_MAX;
@@ -74,22 +94,35 @@ const BEAR_PIXEL = 3;
  * at night, with a moon, parallax mountains and pines, log-spaced milestone
  * branches, a ladder rail, and crash/cash-out feedback. Final sprites come
  * later — this is plain Pixi Graphics, styled to match the concept mockup.
+ *
+ * Layer architecture (back to front; see SCROLL_FACTOR above for parallax):
+ *   skyLayer -> celestialLayer (moon, stars) -> farMountains -> nearMountains
+ *   -> pineSilhouettes -> groundLayer -> treeLayer (trunk + branches)
+ *   -> bearLayer -> fxLayer -> uiLayer (ladder + in-canvas HUD).
+ * Layers never draw across each other; each owns exactly the shapes named
+ * above. `shakeRoot` wraps every layer except uiLayer, so crash screen-shake
+ * never jitters the ladder rail. uiLayer, bearLayer, and fxLayer are
+ * screen-fixed (bearLayer only follows its own bob/fall animation, never
+ * the camera) — the world scrolls underneath them.
  */
 export class Scene {
   readonly app = new Application();
 
-  private readonly world = new Container();
-  private readonly starsLayer = new Container();
+  private readonly shakeRoot = new Container();
+  private readonly skyLayer = new Container();
+  private readonly celestialLayer = new Container();
   private readonly moonLayer = new Container();
-  private readonly mountainsFar = new Container();
-  private readonly mountainsNear = new Container();
-  private readonly pinesLayer = new Container();
+  private readonly starsLayer = new Container();
+  private readonly farMountains = new Container();
+  private readonly nearMountains = new Container();
+  private readonly pineSilhouettes = new Container();
   private readonly groundLayer = new Container();
-  private readonly branchLayer = new Container();
-  private readonly bear = new Container();
+  private readonly treeLayer = new Container();
+  private readonly bearLayer = new Container();
   private readonly bearPaws = new Graphics();
+  private readonly fxLayer = new Container();
+  private readonly uiLayer = new Container();
   private readonly ladderMarker = new Graphics();
-  private readonly particleLayer = new Container();
   private readonly branches: { container: Container; multiplier: number }[] = [];
   private readonly stars: Star[] = [];
 
@@ -113,29 +146,34 @@ export class Scene {
     });
     parent.appendChild(this.app.canvas);
 
+    const groundYAtRest = BEAR_Y + GROUND_OFFSET;
+
     this.drawSky();
     this.drawStars();
     this.drawMoon();
-    const groundYAtRest = BEAR_Y + GROUND_OFFSET;
-    this.drawMountainRange(this.mountainsFar, groundYAtRest - 10, 300, 5, 0x2e2258, 1);
-    this.drawMountainRange(this.mountainsNear, groundYAtRest + 4, 220, 4, 0x3d2d72, 11);
-    this.drawPines();
-    this.drawGround();
+    this.drawMountainRange(this.farMountains, groundYAtRest - 10, 300, 5, 0x2e2258, 1);
+    this.drawMountainRange(this.nearMountains, groundYAtRest + 4, 220, 4, 0x3d2d72, 11);
+    this.drawPines(groundYAtRest - 6);
+    this.drawGround(groundYAtRest);
     this.drawTree();
     this.drawMilestoneBranches();
     this.drawLadder();
     this.drawBear();
 
-    this.world.addChild(
-      this.starsLayer,
-      this.moonLayer,
-      this.mountainsFar,
-      this.mountainsNear,
-      this.pinesLayer,
+    this.celestialLayer.addChild(this.moonLayer, this.starsLayer);
+    this.shakeRoot.addChild(
+      this.skyLayer,
+      this.celestialLayer,
+      this.farMountains,
+      this.nearMountains,
+      this.pineSilhouettes,
       this.groundLayer,
-      this.particleLayer,
+      this.treeLayer,
+      this.bearLayer,
+      this.fxLayer,
     );
-    this.app.stage.addChild(this.world);
+    // uiLayer is a sibling of shakeRoot, not a child — crash shake must never move it.
+    this.app.stage.addChild(this.shakeRoot, this.uiLayer);
 
     this.app.ticker.add(() => this.frame());
   }
@@ -151,13 +189,14 @@ export class Scene {
     gradient.addColorStop(0.85, "#4a2a5e");
     gradient.addColorStop(1, "#5e3366");
     const sky = new Graphics().rect(-20, -20, WIDTH + 40, HEIGHT + 40).fill(gradient);
-    this.world.addChildAt(sky, 0);
+    this.skyLayer.addChild(sky);
   }
 
   private drawStars(): void {
     for (let i = 0; i < 70; i++) {
       const gfx = new Graphics().rect(-1.25, -1.25, 2.5, 2.5).fill({ color: 0xe8e6ff });
       gfx.x = prand(i) * WIDTH;
+      gfx.y = prand(i + 500) * HEIGHT;
       this.starsLayer.addChild(gfx);
       this.stars.push({ gfx, seed: i });
     }
@@ -174,7 +213,7 @@ export class Scene {
     this.moonLayer.addChild(moon);
   }
 
-  /** Draws a jagged mountain silhouette once; vertical parallax is applied via container.y per frame. */
+  /** Draws a jagged mountain silhouette once, in absolute (cameraY = 0) screen coordinates. */
   private drawMountainRange(
     layer: Container,
     baseY: number,
@@ -195,24 +234,23 @@ export class Scene {
     layer.addChild(gfx);
   }
 
-  private drawPines(): void {
-    const base = BEAR_Y + GROUND_OFFSET - 6;
+  private drawPines(baseY: number): void {
     for (let i = 0; i < 14; i++) {
       const x = prand(i + 40) * WIDTH;
       const h = 60 + prand(i + 80) * 90;
-      const yb = base - prand(i + 120) * 40;
+      const yb = baseY - prand(i + 120) * 40;
       const gfx = new Graphics()
         .poly([x, yb - h, x - h * 0.38, yb, x + h * 0.38, yb])
         .fill({ color: 0x12240f });
-      this.pinesLayer.addChild(gfx);
+      this.pineSilhouettes.addChild(gfx);
     }
   }
 
-  private drawGround(): void {
+  private drawGround(groundYAtRest: number): void {
     const ground = new Graphics()
-      .rect(-20, 0, WIDTH + 40, 2000)
+      .rect(-20, groundYAtRest, WIDTH + 40, 2000)
       .fill({ color: 0x1e3317 })
-      .rect(-20, 0, WIDTH + 40, 10)
+      .rect(-20, groundYAtRest, WIDTH + 40, 10)
       .fill({ color: 0x2a4520 });
     this.groundLayer.addChild(ground);
 
@@ -235,21 +273,24 @@ export class Scene {
         gfx.ellipse(0, 0, 12, 7).fill({ color: 0x4a5a48 });
       }
       gfx.x = d.x;
-      gfx.y = 4;
+      gfx.y = groundYAtRest + 4;
       this.groundLayer.addChild(gfx);
     }
   }
 
   private drawTree(): void {
-    const trunk = new Graphics()
-      .rect(TREE_X - TREE_WIDTH / 2, -40, TREE_WIDTH, HEIGHT + 80)
-      .fill({ color: 0x5d3a1e });
+    // Tall enough to stay fully on-screen across the whole climb: treeLayer
+    // scrolls at factor 1.0 (up to SCROLL_PX of travel), so the trunk must
+    // extend well past the canvas on both ends rather than just its height.
+    const top = -(SCROLL_PX + 100);
+    const span = SCROLL_PX + HEIGHT + 200;
+    const trunk = new Graphics().rect(TREE_X - TREE_WIDTH / 2, top, TREE_WIDTH, span).fill({ color: 0x5d3a1e });
     const bark = new Graphics()
-      .rect(TREE_X - TREE_WIDTH / 2, -40, 7, HEIGHT + 80)
+      .rect(TREE_X - TREE_WIDTH / 2, top, 7, span)
       .fill({ color: 0x6e4626 })
-      .rect(TREE_X + TREE_WIDTH / 2 - 7, -40, 7, HEIGHT + 80)
+      .rect(TREE_X + TREE_WIDTH / 2 - 7, top, 7, span)
       .fill({ color: 0x3a2413 });
-    this.world.addChild(trunk, bark);
+    this.treeLayer.addChild(trunk, bark);
   }
 
   private drawMilestoneBranches(): void {
@@ -275,17 +316,19 @@ export class Scene {
       label.y = -6;
 
       container.addChild(branch, leaves, label);
-      this.branchLayer.addChild(container);
+      // Fixed local position (this branch's resting screen position at 1x);
+      // treeLayer's own per-frame scroll carries it at the correct rate.
+      container.y = BEAR_Y - heightOf(mm) * SCROLL_PX;
+      this.treeLayer.addChild(container);
       this.branches.push({ container, multiplier: mm });
     }
-    this.world.addChild(this.branchLayer);
   }
 
   private drawLadder(): void {
     const top = 40;
     const bottom = HEIGHT - 40;
     const rail = new Graphics().rect(LADDER_X - 3, top, 6, bottom - top).fill({ color: 0xffd23f });
-    this.world.addChild(rail);
+    this.uiLayer.addChild(rail);
 
     for (const mm of LADDER_TICKS) {
       const f = heightOf(mm);
@@ -301,10 +344,10 @@ export class Scene {
       });
       label.x = LADDER_X + 12;
       label.y = y - 6;
-      this.world.addChild(tick, label);
+      this.uiLayer.addChild(tick, label);
     }
 
-    this.world.addChild(this.ladderMarker);
+    this.uiLayer.addChild(this.ladderMarker);
   }
 
   private drawBear(): void {
@@ -324,12 +367,12 @@ export class Scene {
           .fill({ color });
       }
     }
-    this.bear.addChild(this.bearPaws, body);
+    this.bearLayer.addChild(this.bearPaws, body);
     this.redrawPaws(true);
 
-    this.bear.x = TREE_X + 46;
-    this.bear.y = BEAR_Y;
-    this.world.addChild(this.bear);
+    // Fixed screen position — the world scrolls underneath, the bear never does.
+    this.bearLayer.x = TREE_X + 46;
+    this.bearLayer.y = BEAR_Y;
   }
 
   private redrawPaws(up: boolean): void {
@@ -352,9 +395,9 @@ export class Scene {
       const g = new Graphics().rect(-5, -5, 10, 10).fill({ color: 0xffd23f });
       const container = new Container();
       container.addChild(g);
-      container.x = this.bear.x;
-      container.y = this.bear.y;
-      this.particleLayer.addChild(container);
+      container.x = this.bearLayer.x;
+      container.y = this.bearLayer.y;
+      this.fxLayer.addChild(container);
       this.particles.push({
         container,
         x: 0,
@@ -394,26 +437,25 @@ export class Scene {
 
     const displayMultiplier =
       snap.state === "CASHED" && snap.cashResult ? snap.cashResult.x : snap.currentMultiplier;
-    const camH = heightOf(displayMultiplier) * SCROLL_PX;
+    const cameraY = heightOf(displayMultiplier) * SCROLL_PX;
 
-    // Parallax background layers (coefficients derived from the concept prototype).
+    // One camera value, per-layer factors — see SCROLL_FACTOR docs above.
+    this.moonLayer.y = cameraY * SCROLL_FACTOR.moon;
+    this.starsLayer.y = cameraY * SCROLL_FACTOR.stars;
+    this.farMountains.y = cameraY * SCROLL_FACTOR.farMountains;
+    this.nearMountains.y = cameraY * SCROLL_FACTOR.nearMountains;
+    this.pineSilhouettes.y = cameraY * SCROLL_FACTOR.pines;
+    this.groundLayer.y = cameraY * SCROLL_FACTOR.ground;
+    this.treeLayer.y = cameraY * SCROLL_FACTOR.tree;
+    // skyLayer, bearLayer, fxLayer, uiLayer: factor 0, never scroll.
+
     for (const star of this.stars) {
-      let sy = (prand(star.seed + 500) * HEIGHT * 3 - camH * 0.15) % (HEIGHT * 1.2);
-      if (sy < 0) sy += HEIGHT * 1.2;
-      star.gfx.y = sy - 20;
       const twinkle = 0.5 + 0.5 * Math.sin(now / 400 + star.seed);
       star.gfx.alpha = 0.3 + 0.6 * twinkle * prand(star.seed + 900);
     }
-    this.moonLayer.y = -camH * 0.05;
-    this.mountainsFar.y = camH * 0.042;
-    this.mountainsNear.y = camH * 0.06;
-    this.pinesLayer.y = camH * 0.1375;
-    this.groundLayer.y = BEAR_Y + camH + GROUND_OFFSET;
 
     for (const branch of this.branches) {
-      const wy = heightOf(branch.multiplier) * SCROLL_PX;
-      const sy = BEAR_Y + (camH - wy);
-      branch.container.y = sy;
+      const sy = this.treeLayer.y + branch.container.y;
       branch.container.visible = sy > -60 && sy < HEIGHT + 60;
     }
 
@@ -444,25 +486,26 @@ export class Scene {
       }
     }
 
-    this.bear.y = BEAR_Y + this.fallY + (snap.state === "CLIMBING" ? Math.sin(now / 110) * 2 : 0);
-    this.bear.rotation = this.fallRotation;
+    this.bearLayer.y = BEAR_Y + this.fallY + (snap.state === "CLIMBING" ? Math.sin(now / 110) * 2 : 0);
+    this.bearLayer.rotation = this.fallRotation;
 
+    // Crash screen-shake: applied to shakeRoot only, so uiLayer (ladder/HUD) never moves.
     const shakeX = this.shakeMagnitude > 0 ? (Math.random() - 0.5) * this.shakeMagnitude * 14 : 0;
     const shakeY = this.shakeMagnitude > 0 ? (Math.random() - 0.5) * this.shakeMagnitude * 8 : 0;
-    this.world.x = shakeX;
-    this.world.y = shakeY;
+    this.shakeRoot.x = shakeX;
+    this.shakeRoot.y = shakeY;
 
     for (const p of this.particles) {
       p.vy += 600 * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.life -= dt;
-      p.container.x = this.bear.x + p.x;
-      p.container.y = this.bear.y + p.y;
+      p.container.x = this.bearLayer.x + p.x;
+      p.container.y = this.bearLayer.y + p.y;
       p.container.alpha = Math.max(0, p.life / p.maxLife);
     }
     for (const p of this.particles.filter((p) => p.life <= 0)) {
-      this.particleLayer.removeChild(p.container);
+      this.fxLayer.removeChild(p.container);
       p.container.destroy();
     }
     this.particles = this.particles.filter((p) => p.life > 0);

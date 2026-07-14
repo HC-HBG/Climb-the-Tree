@@ -116,6 +116,35 @@ Per FSD §2.1, all money values are integer cents:
 
 See `packages/engine/src/protocol.ts` for the exact message shapes.
 
+## Client scene layers
+
+`packages/client/src/game/Scene.ts` renders the climb as explicit Pixi
+`Container` layers, added back-to-front exactly once at init and never
+drawn across:
+
+```
+skyLayer -> celestialLayer (moonLayer, starsLayer) -> farMountains
+  -> nearMountains -> pineSilhouettes -> groundLayer
+  -> treeLayer (trunk + milestone branches) -> bearLayer -> fxLayer
+```
+
+`uiLayer` (ladder rail + marker) is a sibling of every layer above, not a
+child — it and `skyLayer` never scroll. Every other layer scrolls per
+frame via one shared `cameraY = heightOf(multiplier) * SCROLL_PX` value
+and its own constant factor (`SCROLL_FACTOR` in Scene.ts): stars 0.15,
+moon 0.08, far mountains 0.25, near mountains 0.4, pines 0.55, ground and
+tree 1.0 (world-locked, full speed). The bear is screen-fixed (`bearLayer`
+ignores the camera entirely) — the world scrolls under it, never the
+other way around. Crash screen-shake is applied to a `shakeRoot` wrapper
+that holds everything except `uiLayer`, so the ladder/HUD never jitters.
+
+**Visual regression check** (manual, until this has automated coverage):
+at 1x, the tree trunk must fully occlude the mountains/pines directly
+behind it (not the reverse), with the bear sitting on top of the trunk.
+Climbing to ~10x, the mountains should drift down slowly, the pines a
+bit faster, and the tree/branches at full scroll speed, while the ladder
+rail and its marker never shift position on screen.
+
 ## Status
 
 Milestone 1: monorepo scaffold, engine with full math-spec test coverage,
