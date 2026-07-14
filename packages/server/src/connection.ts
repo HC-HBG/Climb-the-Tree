@@ -1,10 +1,13 @@
 import type WebSocket from "ws";
-import { DEFAULT_CONFIG, type ServerToClientMessage } from "@climb-the-tree/engine";
+import {
+  DEFAULT_CONFIG,
+  STUB_STARTING_BALANCE_CENTS,
+  type ServerToClientMessage,
+} from "@climb-the-tree/engine";
 import { RoundSession, type CrashSettlement } from "./roundEngine.js";
 import { Wallet } from "./wallet.js";
 import { parseClientMessage } from "./protocolIO.js";
 
-const STARTING_BALANCE_CENTS = 500_000; // $5,000.00 stub wallet
 const TICK_INTERVAL_MS = 250;
 
 function send(ws: WebSocket, msg: ServerToClientMessage): void {
@@ -16,7 +19,7 @@ function send(ws: WebSocket, msg: ServerToClientMessage): void {
  * One session per connection; v1 has no shared/multiplayer rounds (FSD §8).
  */
 export function handleConnection(ws: WebSocket): void {
-  const wallet = new Wallet(STARTING_BALANCE_CENTS);
+  const wallet = new Wallet(STUB_STARTING_BALANCE_CENTS);
   const session = new RoundSession(wallet, DEFAULT_CONFIG);
 
   let tickTimer: ReturnType<typeof setInterval> | undefined;

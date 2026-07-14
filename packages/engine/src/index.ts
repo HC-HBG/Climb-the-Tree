@@ -1,4 +1,4 @@
-export { DEFAULT_CONFIG, type GameConfig } from "./config.js";
+export { DEFAULT_CONFIG, STUB_STARTING_BALANCE_CENTS, type GameConfig } from "./config.js";
 export { sha256Hex, randomSeedHex } from "./sha256.js";
 export {
   uniformFromHash,

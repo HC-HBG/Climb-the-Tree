@@ -17,3 +17,13 @@ export const DEFAULT_CONFIG: GameConfig = {
   minBetCents: 10,
   maxBetCents: 20_000,
 };
+
+/**
+ * Starting balance for the in-memory wallet stub (FSD §8: real wallet
+ * integration is out of scope for v1). Shared so the client can render an
+ * initial balance before any round has settled, since the WS protocol has
+ * no dedicated "balance" message — the client's local balance is otherwise
+ * only ever corrected by the authoritative `balance` field on
+ * cashout:confirmed.
+ */
+export const STUB_STARTING_BALANCE_CENTS = 500_000;

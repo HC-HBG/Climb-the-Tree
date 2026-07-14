@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Climb the Tree</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="rail">
+        <div class="panel" id="logo">
+          <div class="l1">CLIMB</div>
+          <div class="l2">— THE —</div>
+          <div class="l3">TREE</div>
+        </div>
+
+        <div class="panel">
+          <div id="betTop"><span class="lbl" style="margin: 0">BET</span><span id="betShow">🪙 0.00</span></div>
+          <div class="row">
+            <button id="betMinus">−</button>
+            <input type="text" id="betInput" value="0.00" />
+            <button id="betPlus">+</button>
+          </div>
+          <div class="quick">
+            <button data-q="half">1/2</button><button data-q="dbl">2X</button
+            ><button data-q="max">MAX</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="lbl">AUTO CASH OUT</div>
+          <div id="autoRow">
+            <input type="text" id="autoInput" value="10.00" />
+            <button id="autoToggle">OFF</button>
+          </div>
+        </div>
+
+        <button id="mainBtn">CLIMB<span class="sub">🪙 0.00</span></button>
+
+        <div class="panel" id="sign">
+          CLIMB HIGH.<br /><span class="g">CASH OUT.</span><br /><span class="r">DON'T FALL!</span>
+        </div>
+
+        <div class="panel"><button id="pfBtn">🛡 PROVABLY FAIR</button></div>
+      </div>
+
+      <div id="stage">
+        <div id="topbar">
+          <div id="balance">BALANCE <b id="balShow">🪙 0.00</b></div>
+          <div id="pfBadge">✔ PROVABLY FAIR</div>
+        </div>
+
+        <div id="canvasWrap">
+          <div id="pixiHost"></div>
+          <div id="overlay">
+            <div id="bigMultiplier"></div>
+            <div id="banner"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div id="footer">
+            <div class="stat"><span class="lbl">CURRENT</span><span id="statCurrent">1.00x</span></div>
+            <div class="stat"><span class="lbl">NEXT BRANCH</span><span id="statNext">2x</span></div>
+            <div class="stat">
+              <span class="lbl">HIGHEST CASHED</span><span id="statHighest">1.00x</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="lbl">ROUND HISTORY</div>
+          <div id="history"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pfModal">
+      <div class="inner">
+        <h3>PROVABLY FAIR</h3>
+        <div>NEXT ROUND — SERVER SEED HASH (COMMITMENT):</div>
+        <div class="mono" id="pfHash">…</div>
+        <div>NONCE: <span id="pfNonce">0</span></div>
+        <div>CLIENT SEED (EDITABLE, TAKES EFFECT NEXT ROUND):</div>
+        <input type="text" id="pfClient" value="default" />
+        <div style="margin-top: 10px">
+          <button id="pfRotate">ROTATE SERVER SEED</button>
+        </div>
+        <div style="margin-top: 12px; text-align: right"><button id="pfClose">CLOSE</button></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
