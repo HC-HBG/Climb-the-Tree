@@ -1,0 +1,27 @@
+{
+  "name": "climb-the-tree",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./packages/*\" --if-present run dev",
+    "build": "pnpm --recursive --filter \"./packages/*\" --if-present run build",
+    "test": "pnpm --recursive --filter \"./packages/*\" --if-present run test",
+    "typecheck": "pnpm --recursive --filter \"./packages/*\" --if-present run typecheck",
+    "simulate": "pnpm --filter @climb-the-tree/engine run simulate",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.5",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
+  }
+}
