@@ -1,16 +1,11 @@
 import type { GameController } from "../game/GameController.js";
-import { MILESTONES } from "../game/GameController.js";
 import { centsToDisplay, displayToCents, formatMultiplier } from "../format.js";
+import logoUrl from "../assets/logo.png";
 
 function $<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) throw new Error(`missing element #${id}`);
   return el as T;
-}
-
-function nextMilestone(m: number): number {
-  for (const mm of MILESTONES) if (mm > m) return mm;
-  return 1000;
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -32,7 +27,6 @@ export function wireHud(controller: GameController): void {
   const banner = $<HTMLDivElement>("banner");
 
   const statCurrent = $<HTMLSpanElement>("statCurrent");
-  const statNext = $<HTMLSpanElement>("statNext");
   const statHighest = $<HTMLSpanElement>("statHighest");
 
   const historyEl = $<HTMLDivElement>("history");
@@ -44,6 +38,8 @@ export function wireHud(controller: GameController): void {
   const pfNonce = $<HTMLSpanElement>("pfNonce");
   const pfClient = $<HTMLInputElement>("pfClient");
   const pfRotate = $<HTMLButtonElement>("pfRotate");
+
+  $<HTMLImageElement>("logoImg").src = logoUrl;
 
   let toastEl = document.getElementById("toast");
   if (!toastEl) {
@@ -152,7 +148,6 @@ export function wireHud(controller: GameController): void {
     const displayX =
       snap.state === "CASHED" && snap.cashResult ? snap.cashResult.x : snap.currentMultiplier;
     statCurrent.textContent = formatMultiplier(displayX);
-    statNext.textContent = `${nextMilestone(displayX)}x`;
     statHighest.textContent = formatMultiplier(snap.highestCashedX);
 
     historyEl.innerHTML = snap.history

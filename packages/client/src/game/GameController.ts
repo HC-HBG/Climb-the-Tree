@@ -12,6 +12,7 @@ export type ClientState = "BOOT" | "IDLE" | "WAITING" | "CLIMBING" | "CASHED" | 
 export const MILESTONES = [2, 5, 10, 20, 50, 100, 250, 500, 1000];
 
 const RESET_DELAY_MS = 2200;
+const HISTORY_CAP = 5; // only the last 5 rounds are ever shown (footer bar)
 const MAIN_BUTTON_DEBOUNCE_MS = 150;
 
 export interface HistoryEntry {
@@ -112,7 +113,7 @@ export class GameController {
         case "round:crashed":
           this.crashResult = { crash: msg.crash };
           this.history.unshift({ crash: msg.crash, won: this.wonThisRound });
-          if (this.history.length > 20) this.history.pop();
+          if (this.history.length > HISTORY_CAP) this.history.pop();
           if (!this.wonThisRound) {
             this.state = "CRASHED";
             this.scheduleReset();

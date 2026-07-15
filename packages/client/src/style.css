@@ -14,6 +14,9 @@
   margin: 0;
   padding: 0;
 }
+html {
+  height: 100%;
+}
 body {
   background: var(--bg);
   color: var(--text);
@@ -21,7 +24,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   padding: 10px;
 }
 #app {
@@ -29,13 +33,14 @@ body {
   gap: 10px;
   width: 100%;
   max-width: 1180px;
+  max-height: 100%;
 }
 #rail {
   width: 250px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .panel {
   background: var(--panel);
@@ -45,23 +50,15 @@ body {
 }
 #logo {
   text-align: center;
-  line-height: 1.4;
-  padding: 14px 10px;
+  padding: 8px 10px;
 }
-#logo .l1 {
-  color: #fff;
-  font-size: 20px;
-  text-shadow: 2px 2px 0 #000;
-}
-#logo .l2 {
-  color: var(--gold);
-  font-size: 11px;
-  margin: 2px 0;
-}
-#logo .l3 {
-  color: var(--gold);
-  font-size: 26px;
-  text-shadow: 2px 2px 0 #7a4a00;
+#logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70px;
+  object-fit: contain;
+  margin: 0 auto;
 }
 .lbl {
   font-size: 9px;
@@ -191,7 +188,7 @@ input:disabled {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 #topbar {
@@ -223,10 +220,19 @@ input:disabled {
   border-radius: 8px;
   overflow: hidden;
   background: #171233;
+  /* Fixed height budget so the whole page fits one viewport with no scrolling —
+     100vh minus the topbar, footer bar, gaps and body padding. */
+  height: calc(100vh - 200px);
+  min-height: 260px;
+}
+#pixiHost,
+#pixiHost canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 #pixiHost canvas {
-  display: block;
-  width: 100%;
+  object-fit: contain;
   image-rendering: pixelated;
 }
 #overlay {
@@ -236,7 +242,7 @@ input:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 40px;
+  padding-top: 24px;
 }
 #bigMultiplier {
   font-size: 34px;
@@ -267,25 +273,33 @@ input:disabled {
 #footer {
   display: flex;
   justify-content: space-around;
+  align-items: center;
   text-align: center;
 }
 #footer .stat {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 6px;
 }
 #footer .stat span:last-child {
   font-size: 15px;
   color: var(--green);
 }
+#historyStat {
+  flex: 1;
+  min-width: 0;
+  max-width: 280px;
+}
 #history {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 .chip {
   font-size: 8px;
-  padding: 5px 7px;
+  padding: 4px 6px;
   border-radius: 5px;
   background: #20180f;
   border: 1px solid #333;

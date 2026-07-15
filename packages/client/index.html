@@ -14,9 +14,7 @@
     <div id="app">
       <div id="rail">
         <div class="panel" id="logo">
-          <div class="l1">CLIMB</div>
-          <div class="l2">— THE —</div>
-          <div class="l3">TREE</div>
+          <img id="logoImg" alt="Climb the Tree" />
         </div>
 
         <div class="panel">
@@ -66,16 +64,14 @@
         <div class="panel">
           <div id="footer">
             <div class="stat"><span class="lbl">CURRENT</span><span id="statCurrent">1.00x</span></div>
-            <div class="stat"><span class="lbl">NEXT BRANCH</span><span id="statNext">2x</span></div>
+            <div class="stat" id="historyStat">
+              <span class="lbl">ROUND HISTORY</span>
+              <div id="history"></div>
+            </div>
             <div class="stat">
               <span class="lbl">HIGHEST CASHED</span><span id="statHighest">1.00x</span>
             </div>
           </div>
-        </div>
-
-        <div class="panel">
-          <div class="lbl">ROUND HISTORY</div>
-          <div id="history"></div>
         </div>
       </div>
     </div>
