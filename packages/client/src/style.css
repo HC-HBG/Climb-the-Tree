@@ -191,28 +191,14 @@ input:disabled {
   gap: 8px;
   min-width: 0;
 }
-#topbar {
+#balancePanel {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--panel);
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 14px;
+  font-size: 11px;
 }
-#balance {
-  font-size: 12px;
-}
-#balance b {
+#balancePanel #balShow {
   color: var(--gold);
-}
-#pfBadge {
-  font-size: 8px;
-  color: #8fe08a;
-  border: 2px solid #2e5d32;
-  border-radius: 6px;
-  padding: 6px 8px;
-  background: #12210f;
 }
 #canvasWrap {
   position: relative;
@@ -221,9 +207,9 @@ input:disabled {
   overflow: hidden;
   background: #171233;
   /* Fixed height budget so the whole page fits one viewport with no scrolling —
-     100vh minus the topbar, footer bar, gaps and body padding. */
-  height: calc(100vh - 200px);
-  min-height: 260px;
+     100vh minus the footer bar, its gap, and body padding. */
+  height: calc(100vh - 110px);
+  min-height: 320px;
 }
 #pixiHost,
 #pixiHost canvas {
@@ -282,7 +268,8 @@ input:disabled {
   align-items: center;
   gap: 6px;
 }
-#footer .stat span:last-child {
+#statCurrent,
+#statHighest {
   font-size: 15px;
   color: var(--green);
 }
@@ -298,8 +285,14 @@ input:disabled {
   justify-content: center;
 }
 .chip {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 20px;
   font-size: 8px;
-  padding: 4px 6px;
+  padding: 0 6px;
   border-radius: 5px;
   background: #20180f;
   border: 1px solid #333;
