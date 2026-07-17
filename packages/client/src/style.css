@@ -238,12 +238,24 @@ input:disabled {
     -1px -1px 0 #000,
     1px -1px 0 #000,
     -1px 1px 0 #000;
+  transform-origin: center;
 }
 #bigMultiplier.crashed {
   color: var(--red);
 }
 #bigMultiplier.cashed {
   color: var(--green);
+}
+#bigMultiplier.pop {
+  animation: multiplierPop 220ms ease-out;
+}
+@keyframes multiplierPop {
+  0% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 #banner {
   font-size: 16px;

@@ -145,6 +145,26 @@ Climbing to ~10x, the mountains should drift down slowly, the pines a
 bit faster, and the tree/branches at full scroll speed, while the ladder
 rail and its marker never shift position on screen.
 
+### Pixel-grid rendering and palette
+
+The whole scene draws into a 320×220 `RenderTexture` (nearest-neighbor
+scale mode) which a single `Sprite` then upscales to the real canvas
+size — one consistent pixel grid for every layer, instead of each
+`Graphics` object being rasterized at a different effective resolution.
+All fills come from the locked 24-color palette in
+`packages/client/src/game/palette.ts`, derived from the key art; new art
+should reuse those named colors rather than introducing new hex values.
+
+**FPS note:** FR-18 targets 60fps. A/B benchmarking (700 simple
+`Graphics` nodes, with vs. without the offscreen `RenderTexture` pass)
+showed near-identical frame rates either way, so the render-to-texture
+step is not the bottleneck. Headless Chromium in this project's CI/sandbox
+environment reports `SwiftShader` as its WebGL renderer (a CPU
+rasterizer — no real GPU is exposed to the container), which caps FPS
+well below 60 regardless of scene complexity. This is a property of the
+headless test environment, not the client: verify FR-18 in an actual
+GPU-accelerated browser, not headless Chromium in this sandbox.
+
 ## Status
 
 Milestone 1: monorepo scaffold, engine with full math-spec test coverage,

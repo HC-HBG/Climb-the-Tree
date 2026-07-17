@@ -1,5 +1,5 @@
 import type { GameController } from "../game/GameController.js";
-import { centsToDisplay, displayToCents, formatMultiplier } from "../format.js";
+import { centsToDisplay, displayToCents, formatMultiplier, multiplierRampColor } from "../format.js";
 import logoUrl from "../assets/logo.png";
 
 function $<T extends HTMLElement>(id: string): T {
@@ -9,6 +9,7 @@ function $<T extends HTMLElement>(id: string): T {
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
+let lastPoppedUnit = 1;
 
 export function wireHud(controller: GameController): void {
   const betInput = $<HTMLInputElement>("betInput");
@@ -91,6 +92,8 @@ export function wireHud(controller: GameController): void {
   pfClient.addEventListener("change", () => controller.setClientSeed(pfClient.value || "default"));
   pfRotate.addEventListener("click", () => controller.rotateSeed());
 
+  bigMultiplier.addEventListener("animationend", () => bigMultiplier.classList.remove("pop"));
+
   function render(): void {
     const snap = controller.getSnapshot();
 
@@ -126,11 +129,21 @@ export function wireHud(controller: GameController): void {
         snap.betCents < controller.config.minBetCents;
     }
 
-    bigMultiplier.className = "";
+    bigMultiplier.classList.remove("cashed", "crashed");
+    bigMultiplier.style.color = "";
     banner.className = "";
     banner.textContent = "";
     if (snap.state === "CLIMBING") {
       bigMultiplier.textContent = formatMultiplier(snap.currentMultiplier);
+      bigMultiplier.style.color = multiplierRampColor(snap.currentMultiplier);
+
+      const wholeUnit = Math.floor(snap.currentMultiplier);
+      if (wholeUnit > lastPoppedUnit) {
+        lastPoppedUnit = wholeUnit;
+        bigMultiplier.classList.remove("pop");
+        void bigMultiplier.offsetWidth; // restart the CSS animation
+        bigMultiplier.classList.add("pop");
+      }
     } else if (snap.state === "CASHED" && snap.cashResult) {
       bigMultiplier.textContent = formatMultiplier(snap.cashResult.x);
       bigMultiplier.classList.add("cashed");
@@ -143,6 +156,7 @@ export function wireHud(controller: GameController): void {
       banner.textContent = snap.crashResult.crash === 1 ? "BRANCH SNAPPED!" : "HE FELL!";
     } else {
       bigMultiplier.textContent = "";
+      lastPoppedUnit = 1;
     }
 
     const displayX =
